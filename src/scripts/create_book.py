@@ -7,10 +7,6 @@ Description:
 
 # Standard libraries
 import argparse
-import os
-
-# Non-standard libraries
-import jinja2
 
 # Custom libraries
 from src.classes.book_maker import BookMaker
