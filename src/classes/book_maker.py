@@ -74,11 +74,14 @@ class BookMaker:
             "sections": False
         }
 
+        # Store mapping of section name to subsection name
+        self.section_to_subsections = {}
+
         # Store parts of book
         self._book = {
             "title": title,
             "toc": None,
-            "sections": {}
+            "sections": self.section_to_subsections,
         }
 
         # Start conversation about the book, if conversation ID not provided
@@ -179,6 +182,9 @@ class BookMaker:
             # Store generated title
             self._book["title"] = title
             LOGGER.info("SUCCESS: Created title.")
+
+            # Set progress as done
+            self.progress["title"] = True
         except Exception as error_msg:
             LOGGER.error("FAIL: Failed to create title!")
             LOGGER.error(error_msg)
@@ -214,22 +220,29 @@ class BookMaker:
             LOGGER.error(error_msg)
 
 
-    # TODO: Implement this
     def extract_sections_from_toc(self):
         """
-        Extract section names from table of contents.
+        Extract book section/chapter names from table of contents.
         """
-        if self._book["toc"] is None:
+        toc = self._book["toc"]
+        if toc is None:
             LOGGER.warning("FAIL: Failed to extract book chapters/sections. "
                            "Table of Contents has not yet been generated!")
 
-        
+        # Accumulate mapping of sections to subsections
+        # NOTE: If no subsections provided
+        section_to_subsections = extract_utils.extract_sections_from_toc(toc)
 
-        raise NotImplementedError
+        # Store section
+        self.section_to_subsections = section_to_subsections
 
 
     # TODO: Implement this
     def create_sections(self):
+        raise NotImplementedError
+
+    # TODO: Implement this
+    def create_subsections(self):
         raise NotImplementedError
 
 
