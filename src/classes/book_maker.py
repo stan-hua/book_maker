@@ -71,7 +71,7 @@ class BookMaker:
         for i in range(1, 4):
             try:
                 self._chatbot = Chatbot(
-                    constants.config, 
+                    constants.DEFAULT_CONFIG,
                     conversation_id=conversation_id,
                     parent_id=parent_id)
                 break
@@ -125,7 +125,7 @@ class BookMaker:
 
         # Save book contents to JSON file
         with open(path, "w") as handler:
-            json.dump(self._book, handler)
+            json.dump(self._book, handler, indent=4)
 
         LOGGER.info("SUCCESS: Saved book contents to JSON file")
 

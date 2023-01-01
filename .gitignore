@@ -1,3 +1,4 @@
 src/data/constants.py
 .vscode/launch.json
 *.pyc
+src/output/
