@@ -8,6 +8,9 @@ pip install -r requirements.txt
 ```
 
 ## Create a Book
+
+In order to create a book, run the following commands.
+
 In Windows:
 ```
 ./make_book.bat --topic [TOPIC]
