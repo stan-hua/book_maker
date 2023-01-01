@@ -1,0 +1,4 @@
+In the {{ language }} language, can you write the section of the book on {{ section }}
+{%- if subsection is defined and subsection -%}
+, specifically the subsection {{ subsection }}
+{%- endif -%}?

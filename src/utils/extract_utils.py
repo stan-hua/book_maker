@@ -13,7 +13,7 @@ from collections import OrderedDict
 ################################################################################
 #                               Helper Functions                               #
 ################################################################################
-def extract_central_text(text):
+def extract_central_text(text, include_start=False, include_end=False):
     """
     Extract central text, if there is a starting (and ending) paragraph.
 
@@ -26,6 +26,10 @@ def extract_central_text(text):
     ----------
     text : str
         Text to parse
+    include_start : bool, optional
+        If True, does not discard FIRST paragraph from text. Defaults to False.
+    include_end : bool, optional
+        If True, does not discard LAST paragraph from text. Defaults to False.
 
     Returns
     -------
@@ -35,16 +39,22 @@ def extract_central_text(text):
     # Split into 1+ blocks
     blocks = text.split("\n\n")
 
+    # Remove paragraph equal to "---"
+    blocks = [block for block in blocks if block != "---"]
+
     # Handle cases for differing num. of paragraphs
     if len(blocks) == 0:
         return ""
     elif len(blocks) == 1:
         return blocks[0]
     elif len(blocks) == 2:
-        return blocks[1]
+        return blocks[1] if not include_start else "\n\n".join(blocks)
     else:
-        # if 3 or more, remove start AND end paragraphs
-        return "\n\n".join(blocks[1:-1])
+        # Unless specified, remove first paragraph
+        start_idx = 0 if include_start else 1
+        # Unless specifeid, remove last paragraph
+        end_idx = len(blocks) if include_end else -1
+        return "\n\n".join(blocks[start_idx:end_idx])
 
 
 def extract_first_option(text):
@@ -101,30 +111,51 @@ def extract_sections_from_toc(toc_text):
     """
     section_to_subsections = OrderedDict()
 
-    # Iterate over section blocks
-    section_blocks = toc_text.split("\n\n")
-    for section_block in section_blocks:
-        # Split into lines
-        lines = section_block.split("\n")
+    # Iterate over lines
+    # Accumulate sections/subsections
+    lines = [line for line in toc_text.split("\n") if line]
+    curr_section = None
+    curr_subsections = None
+    for line in lines:
+        # Check if line is a section header
+        section = parse_numbered_list_item_from_line(line)
+        # If so, ready up to collect subsections
+        if section is not None:
+            # Store previous sections/subsections
+            if curr_section is not None:
+                # NOTE: Rather store `None` if no subsections, instead of []
+                section_to_subsections[curr_section] = curr_subsections \
+                    if curr_subsections else None
 
-        # First line should always be the section header
-        section = parse_numbered_list_item(lines[0])
+            # Reinitialize
+            curr_section = section
+            curr_subsections = []
+            continue
 
-        # If there are more lines, these are subsections
-        if len(lines) > 1:
-            subsections = extract_list_from_bulletpoints("\n".join(lines[1:]))
-        else:
-            subsections = None
+        # Check if line is a subsection header
+        subsection = parse_unordered_list_item_from_line(line)
+        if subsection is not None:
+            if curr_subsections is None:
+                raise RuntimeError("Subsection occurs before section header!")
+            curr_subsections.append(subsection)
+            continue
 
-        # Store section/subsections found
-        section_to_subsections[section] = subsections
+    # If last section not saved, store section/subsections
+    if curr_section is not None and curr_section not in section_to_subsections:
+        # NOTE: Rather store `None` if no subsections, instead of []
+        section_to_subsections[curr_section] = curr_subsections \
+            if curr_subsections else None
 
     return section_to_subsections
 
 
-def parse_numbered_list_item(text):
+def parse_numbered_list_item_from_line(line):
     """
-    Remove unnecessary text to the left of a numbered list item.
+    Given a text line, attempt to parse item from an ordered list, if possible.
+
+    Note
+    ----
+    Numbered list item can appear as "1." or "1:" or "1)".
 
     Parameters
     ----------
@@ -133,48 +164,47 @@ def parse_numbered_list_item(text):
 
     Example
     -------
-    >>> text = "Chapter 1. The start"
-    >>> parse_numbered_list_item(text)
-    "1. The start"
+    >>> line = "Chapter 1. The start"
+    >>> parse_numbered_list_item_from_line(line)
+    "The start"
 
     Returns
     -------
     str
-        Numbered list item. Returns None, if not found
+        Item in ordered list item. Returns None, if not found
     """
-    match = re.search(r"(\w*\s*)(\d. .*)", text)
+    match = re.search(r"(\w*\s*)\d(\.|:|\)) (.*)", line)
     if match is None:
         return None
 
     # Get numbered item
-    numbered_item = match.group(2)
+    numbered_item = match.group(3)
     return numbered_item
 
 
-def extract_list_from_bulletpoints(text):
+def parse_unordered_list_item_from_line(line):
     """
-    Given a text containing bullet-points, extract bullet-pointed items.
+    Given a text line, attempt to parse item from unordered list (bullet point),
+    if possible.
+
+    Note
+    ----
+    Unordered list item begins with the bullet point: "- "
 
     Parameters
     ----------
-    text : str
-        Contains bullet-pointed text
+    line : str
+        A line of text, possibly containing a bullet-pointed item
 
     Returns
     -------
-    list
-        List of items from bullet-pointed text
+    str
+        Item in bullet point. Returns None, if not found
     """
-    items = []
+    match = re.search(r"(\s*)- (.*)", line)
+    if match is None:
+        return None
 
-    # Iterate over each line
-    for line in text.split("\n"):
-        # Filter for those starting with bullet point
-        match = re.search(r"(\s*)- (.*)", line)
-        if match is None:
-            continue
-
-        # Store found bullet-pointed item
-        items.append(match.group(2))
-
-    return items
+    # Get unordered item
+    item = match.group(2)
+    return item
