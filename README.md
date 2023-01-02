@@ -7,7 +7,7 @@
 pip install -r requirements.txt
 ```
 
-2. Please add your ChatGPT login details under `src.data.config.json`. For more
+2. Please add your ChatGPT login details under `src/data/config.json`. For more
 details, look at https://github.com/acheong08/ChatGPT/wiki/Setup
 ```
 {
@@ -30,6 +30,12 @@ In Linux:
 ```
 ./make_book --topic [TOPIC]
 ```
+
+## Examples
+
+You may find example generated books under `samples`.
+
+![image](https://user-images.githubusercontent.com/63123494/210196769-0874c4f3-495b-486a-a28e-7613131a275a.png)
 
 
 ### Acknowledgements
