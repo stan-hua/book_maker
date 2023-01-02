@@ -33,9 +33,9 @@ In Linux:
 
 ## Examples
 
-You may find example generated books under `samples`.
+You may find example generated books under the `samples` folder.
 
-![image](https://user-images.githubusercontent.com/63123494/210196769-0874c4f3-495b-486a-a28e-7613131a275a.png)
+![image](https://user-images.githubusercontent.com/63123494/210196886-7c16108e-a3b1-47d0-940c-be5b63f558dc.png)
 
 
 ### Acknowledgements
