@@ -173,12 +173,12 @@ def parse_numbered_list_item_from_line(line):
     str
         Item in ordered list item. Returns None, if not found
     """
-    match = re.search(r"(\w*\s*)\d(\.|:|\)) (.*)", line)
+    match = re.search(r"(\w*\s*)(\d+)(\.|:|\)) (.*)", line)
     if match is None:
         return None
 
     # Get numbered item
-    numbered_item = match.group(3)
+    numbered_item = match.group(4)
     return numbered_item
 
 
@@ -208,3 +208,30 @@ def parse_unordered_list_item_from_line(line):
     # Get unordered item
     item = match.group(2)
     return item
+
+
+def extract_list_from_numbered_list_text(text):
+    """
+    Given text containing a numbered list of items, extract items into a list.
+
+    Parameters
+    ----------
+    text : str
+        Text containing numbered list items
+
+    Returns
+    -------
+    list
+        List of items as strings
+    """
+    # Split into lines
+    lines = text.split("\n")
+
+    # Get all numbered items
+    items = []
+    for line in lines:
+        item = parse_numbered_list_item_from_line(line)
+        if item is not None:
+            items.append(item)
+
+    return items

@@ -33,7 +33,9 @@ SECTION_TO_TEMPLATE_FNAME = {
     "create_title": "create_title.txt.jj",
     "create_toc": "create_toc.txt.jj",
     "create_section": "create_section.txt.jj",
-    "check_if_finished": "follow_up.txt.jj"
+    "check_if_finished": "follow_up.txt.jj",
+    "create_description": "create_description.txt.jj",
+    "create_keywords": "create_keywords.txt.jj",
 }
 
 
@@ -85,7 +87,9 @@ class BookMaker:
         self.progress = {
             "title": title is not None,
             "toc": False,
-            "sections": False
+            "sections": False,
+            "description": False,
+            "keywords": False,
         }
 
         # Store parts of book
@@ -94,6 +98,8 @@ class BookMaker:
             "title": title,
             "toc": None,
             "sections": None,
+            "description": None,
+            "keywords": None,
         }
 
         # Start conversation about the book, if conversation ID not provided
@@ -159,6 +165,12 @@ class BookMaker:
 
         # Create table of contents
         self.create_toc()
+
+        # Create short paragraph description
+        self.create_description()
+
+        # Create 3 keywords for the book
+        self.create_keywords()
 
         # Prepare sections/subsections to generate, based on table of contents
         self.extract_sections_from_toc()
@@ -369,6 +381,89 @@ class BookMaker:
             LOGGER.error(error_msg)
 
 
+    def create_description(self):
+        """
+        Create and store short description of book
+        """
+        if self._book["description"] is not None:
+            return
+
+        # Create title using ChatGPT
+        # 0. Prepare to render text prompt
+        template_fname = SECTION_TO_TEMPLATE_FNAME["create_description"]
+        template_vars = {"language": self.language}
+
+        # 1. Render text prompt
+        prompt = template_utils.render_template(template_fname, template_vars)
+
+        # 2. Feed prompt to chatbot
+        try:
+            text_output = self._chatbot.ask(prompt)["message"]
+
+            # Remove unneeded start/end paragraphs from Chatbot
+            description = extract_utils.extract_central_text(text_output)
+
+            # Remove double quotes, if any
+            description = description.replace('"', "")
+
+            # Store generated description
+            self._book["description"] = description
+            LOGGER.info("SUCCESS: Created short description.")
+
+            # Set progress as done
+            self.progress["description"] = True
+        except Exception as error_msg:
+            LOGGER.error("FAIL: Failed to create description!")
+            LOGGER.error(error_msg)
+
+
+    def create_keywords(self, num_keywords=3):
+        """
+        Create and store 3 keywords for book
+
+        Parameters
+        ----------
+        num_keywords : int, optional
+            Number of keywords to generate. Defaults to 3.
+        """
+        if self._book["keywords"] is not None:
+            return
+
+        # Create title using ChatGPT
+        # 0. Prepare to render text prompt
+        template_fname = SECTION_TO_TEMPLATE_FNAME["create_keywords"]
+        template_vars = {
+            "num_keywords": num_keywords,
+        }
+
+        # 1. Render text prompt
+        prompt = template_utils.render_template(template_fname, template_vars)
+
+        # 2. Feed prompt to chatbot
+        try:
+            text_output = self._chatbot.ask(prompt)["message"]
+
+            # Remove unneeded start/end paragraphs from Chatbot
+            text_output = extract_utils.extract_central_text(text_output)
+
+            # Extract list of keywords
+            keywords = extract_utils.extract_list_from_numbered_list_text(
+                text_output)
+
+            # Store generated description
+            self._book["keywords"] = keywords
+            LOGGER.info("SUCCESS: Created keywords for the book.")
+
+            # Set progress as done
+            self.progress["keywords"] = True
+        except Exception as error_msg:
+            LOGGER.error("FAIL: Failed to create keywords for the book!")
+            LOGGER.error(error_msg)
+
+
+    ############################################################################
+    #                           Helper Functions                               #
+    ############################################################################
     def _iter_check_if_finished(self, text=None):
         """
         Iteratively check that last prompt was finished. If not, continues to
