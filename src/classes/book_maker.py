@@ -554,13 +554,3 @@ class BookMaker:
                 return None
 
         return text_output
-
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
-    topic = "Coding basic computer vision projects in PyTorch"
-    book_maker = BookMaker(topic=topic)
-    book_maker.create_book()
-    book_maker.save(constants.DIR_SRC + "/output/pytorch_book.json")
-
-    print("Success!")
