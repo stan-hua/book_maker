@@ -48,22 +48,23 @@ def main(args):
     )
 
     # Create book
-    # TODO: Generate short description
-    # TODO: Generate 3 keywords
     book_maker.create_book()
+
+    # Save book contents to JSON file
+    book_maker.save(os.path.join(args.directory, "book.contents.json"))
 
     # Get book contents
     book_dict = book_maker.get_book_dict()
 
-    # TODO: Format book
+    # Format book
     book_formatter = BookFormatter(
         authors=args.authors,
         book_dict=book_dict,
         language=code)
     book_formatter.format_book()
 
-    # TODO: Save HTML book
-    book_formatter.save_html(directory=args.directory, fname=args.fname)
+    # Save book as EPUB
+    book_formatter.save_epub(directory=args.directory, fname=args.fname)
 
 
 ################################################################################
@@ -87,7 +88,7 @@ def init(parser):
 
         "directory": "Directory to save books in. Saves to the current "
                      "working directory by default.",
-        "fname": "Filename to save HTML book as. Saves as 'book.html' by "
+        "fname": "Filename to save EPUB book as. Saves as 'book.epub' by "
                  "default",
     }
 
@@ -110,7 +111,7 @@ def init(parser):
                         default=os.getcwd(),
                         help=arg_help["directory"])
     parser.add_argument("--fname",
-                        default="book.html",
+                        default="book.epub",
                         help=arg_help["fname"])
 
 
