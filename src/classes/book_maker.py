@@ -47,13 +47,15 @@ class BookMaker:
     BookChatbot class. Used to create parts of book.
     """
 
-    def __init__(self, topic, conversation_id=None, parent_id=None,
+    def __init__(self, config, topic, conversation_id=None, parent_id=None,
                  title=None, language="English"):
         """
         Starts ChatGPT session
 
         Parameters
         ----------
+        config : dict
+            Contains login configurations
         topic : str
             Topic of book
         conversation_id : int
@@ -73,7 +75,7 @@ class BookMaker:
         for i in range(1, 4):
             try:
                 self._chatbot = Chatbot(
-                    constants.DEFAULT_CONFIG,
+                    config,
                     conversation_id=conversation_id,
                     parent_id=parent_id)
                 break

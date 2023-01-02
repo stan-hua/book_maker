@@ -40,8 +40,12 @@ def main(args):
     # INPUT: Preprocess language to 2-digit code
     language, code = get_language_and_code(args.language)
 
+    # Load login configurations from `config.json` in `data` directory
+    config = load_config(args.config_path)
+
     # Start session
     book_maker = BookMaker(
+        config=config,
         topic=args.topic,
         language=language,
         title=args.title
@@ -80,6 +84,9 @@ def init(parser):
         ArgumentParser object
     """
     arg_help = {
+        "config_path": "Path to JSON file containing Chatbot login "
+                       "configurations",
+
         "topic": "Topic of desired book",
         "authors": "Names of book authors",
         "language": "Language to write book in",
@@ -91,6 +98,11 @@ def init(parser):
         "fname": "Filename to save EPUB book as. Saves as 'book.epub' by "
                  "default",
     }
+
+    # Arguments for Connecting to Chatbot
+    parser.add_argument("--config_path",
+                        default=os.path.join(constants.DIR_DATA, "config.json"),
+                        help=arg_help["config_path"])
 
     # Arguments for Book Generation
     parser.add_argument("--topic",
@@ -154,6 +166,30 @@ def get_language_and_code(language):
     code = language_to_code[language]
 
     return language, code
+
+
+def load_config(path):
+    """
+    Returns configuration found at path provided
+
+    Note
+    ----
+    Please look at revChatGPT GitHub docs on how to create a proper login config
+    file. Link: https://github.com/acheong08/ChatGPT/wiki/Setup
+
+    Parameters
+    ----------
+    path : str
+        Path to JSON file containing Chatbot login configurations
+
+    Returns
+    -------
+    dict
+        Containing login configurations
+    """
+    with open(path, "r") as handler:
+        config = json.load(handler)
+    return config
 
 
 ################################################################################
