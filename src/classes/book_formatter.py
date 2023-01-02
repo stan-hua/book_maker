@@ -14,7 +14,7 @@ import re
 from ebooklib import epub
 
 # Custom libraries
-from src.utils import template_utils
+from src.data import constants
 
 
 ################################################################################
@@ -98,8 +98,11 @@ class BookFormatter:
         for author in self.authors:
             book.add_author(author)
 
-        # TODO: Add CSS
-        style = 'body { font-family: Times, Times New Roman, serif; }'
+        # Add CSS
+        # 0. Load from file
+        with open(constants.BOOK_CSS, "r") as handler:
+            style = handler.read()
+        # 1. Create EpubItem with CSS styling
         nav_css = epub.EpubItem(
             uid="style_nav",
             file_name="style/nav.css",
