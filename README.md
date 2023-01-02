@@ -1,10 +1,20 @@
 # AI BookMaker
 
 ## Quick Start
-Install required dependencies:
+1. Install required dependencies:
 
 ```
 pip install -r requirements.txt
+```
+
+2. Please add your ChatGPT login details under `src.data.config.json`. For more
+details, look at https://github.com/acheong08/ChatGPT/wiki/Setup
+```
+{
+    "email": <ENTER YOUR EMAIL HERE>,
+    "password": <PASSWORD>,
+    "isMicrosoftLogin": true
+}
 ```
 
 ## Create a Book
