@@ -35,8 +35,11 @@ In Linux:
 
 You may find example generated books under the `samples` folder.
 
-Example 1. Introduction to PyTorch for Computer Vision. Here is a screenshot of the Table of Contents:
-![image](https://user-images.githubusercontent.com/63123494/210196886-7c16108e-a3b1-47d0-940c-be5b63f558dc.png)
+<b>Example Book 1</b>. Introduction to PyTorch for Computer Vision
+
+Here is a screenshot of the Table of Contents:
+
+<t>![image](https://user-images.githubusercontent.com/63123494/210196886-7c16108e-a3b1-47d0-940c-be5b63f558dc.png)
 
 
 ## Acknowledgements
