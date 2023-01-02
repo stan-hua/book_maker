@@ -55,7 +55,8 @@ def main(args):
     book_maker.create_book()
 
     # Save book contents to JSON file
-    book_maker.save(os.path.join(args.directory, "book.contents.json"))
+    book_maker.save(os.path.join(
+        args.directory, args.fname.replace(".epub", ".content.json")))
 
     # Get book contents
     book_dict = book_maker.get_book_dict()
@@ -205,4 +206,3 @@ if __name__ == "__main__":
 
     # 2. Create book!
     main(ARGS)
-
