@@ -8,15 +8,14 @@ Description:
 # Standard libraries
 import json
 import logging
+import time
 from collections import OrderedDict
-from difflib import SequenceMatcher
 
 # Non-standard libraries
 from Levenshtein import distance as levenshtein_distance
 from revChatGPT.ChatGPT import Chatbot
 
 # Custom libraries
-from src.data import constants
 from src.utils import extract_utils, template_utils
 
 
@@ -486,23 +485,30 @@ class BookMaker:
         text = text if text else ""
 
         # Iteratively check for more text, until prompt is completely finished
-        last_text = text
         while True:
-            new_text = self._check_if_finished(last_text)
+            # 0. Split original text into sentences, and get last
+            sentences = [sent for sent in text.split(".") if sent]
+            last_sentence = sentences[-1]
+            # 0.1 Get non-text (left-hand) side of the last sentence
+            left_last, right_last = extract_utils.split_non_text_from_line(
+                last_sentence)
+
+            # Wait 10 seconds between sending follow-up
+            time.sleep(10)
+            # 1. Send follow-up prompt
+            new_text = self._check_if_finished(right_last)
             # Break, if chatbot is done with last prompt
             if new_text is None:
                 break
 
-            # 1. Preprocess newly-generated text
+            # 2. Preprocess newly-generated text
+            # 2.1 Remove central text
             new_text = extract_utils.extract_central_text(new_text)
+            # 2.2 Remove quotes
+            new_text = new_text.replace('"', "")
 
-            # 2. Merge new text to already existing text
-            matcher = SequenceMatcher(None, text, new_text)
-            match = matcher.find_longest_match(0, len(text), 0, len(new_text))
-            text = text[:match.a] + new_text[match.b:]
-
-            # Update last text
-            last_text = new_text
+            # 3. Merge new text to the last sentences
+            text = ".".join(sentences[:-1] + [left_last + new_text])
 
         return text
 
@@ -529,9 +535,15 @@ class BookMaker:
         str
             Follow-up output of Chatbot, or returns None, if finished.
         """
+        # 0. Get last sentence from the text
+        last_sentence = [i for i in text.split(".") if i][-1]
+
         # 0. Prepare to render text prompt
         template_fname = SECTION_TO_TEMPLATE_FNAME["check_if_finished"]
-        template_vars = {"language": self.language}
+        template_vars = {
+            "language": self.language,
+            "last_sentence": last_sentence,
+        }
 
         # 1. Render follow-up text prompt
         prompt = template_utils.render_template(template_fname, template_vars)
@@ -541,7 +553,8 @@ class BookMaker:
 
         # CHECK: If chatbot is finished
         # CASE 1: Its output will start with "Done."
-        if text_output.startswith("Done."):
+        if text_output.startswith("Done.") or \
+                "section is complete" in text_output:
             return None
         # CASE 2: It will return something similar to the last text
         if text:

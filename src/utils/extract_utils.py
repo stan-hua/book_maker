@@ -82,14 +82,15 @@ def extract_first_option(text):
 
     # Iterate over each line to find the first option
     for line in lines:
-        # Check if line starst with "1. " or "1) "
+        # Check if line starts with "1. " or "1) "
         match = re.search(r"^1(\.|\)) (.*)", line)
-        if match is None:
-            continue
+        if match is not None:
+            return match.group(2)
 
-        # Get first option
-        first_option = match.group(2)
-        break
+        # Check if line starts with "- "
+        match = re.search(r"- (.*)", line)
+        if match is not None:
+            return match.group(1)
 
     return first_option
 
@@ -109,6 +110,33 @@ def extract_sections_from_toc(toc_text):
     OrderedDict of {section: subsection}
         Contains mapping of section to `None` or list of subsections, if present
     """
+    # CASE 1: Table of Contents be split into paragraphs
+    if len(toc_text.split("\n\n")) > 1:
+        return extract_sections_subsections_by_paragraphs(toc_text)
+    # CASE 2: Table of Contents can only be parsed line-by-line
+    # NOTE: This is less robust to un-numbered section headers.
+    else:
+        return extract_sections_subsections_by_line(toc_text)
+
+
+def extract_sections_subsections_by_line(toc_text):
+    """
+    Attempt to extract sections and subsections from ToC line-by-line
+
+    Note
+    ----
+    May not be robust to non-numbered section headers.
+
+    Parameters
+    ----------
+    toc_text : str
+        Text containing table of contents
+
+    Returns
+    -------
+    OrderedDict
+        Ordered mapping of {sections: [subsections]}
+    """
     section_to_subsections = OrderedDict()
 
     # Iterate over lines
@@ -116,7 +144,7 @@ def extract_sections_from_toc(toc_text):
     lines = [line for line in toc_text.split("\n") if line]
     curr_section = None
     curr_subsections = None
-    for line in lines:
+    for i, line in enumerate(lines):
         # Check if line is a section header
         section = parse_numbered_list_item_from_line(line)
         # If so, ready up to collect subsections
@@ -136,7 +164,13 @@ def extract_sections_from_toc(toc_text):
         subsection = parse_unordered_list_item_from_line(line)
         if subsection is not None:
             if curr_subsections is None:
-                raise RuntimeError("Subsection occurs before section header!")
+                # HACK: Assume last line was a section header w/o a number
+                if i != 0 and lines[i-1]:
+                    curr_section = lines[i-1]
+                    curr_subsections = []
+                else:
+                    raise RuntimeError("Subsection occurs without a section "
+                                       "header!")
             curr_subsections.append(subsection)
             continue
 
@@ -147,6 +181,79 @@ def extract_sections_from_toc(toc_text):
             if curr_subsections else None
 
     return section_to_subsections
+
+
+def extract_sections_subsections_by_paragraphs(toc_text):
+    """
+    Attempt to extract sections and subsections from ToC, where ToC splits
+    sections by paragraphs (marked by 2 newlines).
+
+    Note
+    ----
+    More robust to non-numbered section headers compared to extracting by line.
+
+    Parameters
+    ----------
+    toc_text : str
+        Text containing table of contents, where sections are separated by two
+        newlines
+
+    Returns
+    -------
+    OrderedDict
+        Ordered mapping of {sections: [subsections]}
+    """
+    section_to_subsections = OrderedDict()
+
+    # Iterate over paragraphs (each is 1 section + subsections)
+    # Accumulate sections/subsections
+    paragraphs = [par for par in toc_text.split("\n\n") if par]
+    for par in paragraphs:
+        curr_section, curr_subsections = parse_one_section_to_subsections(par)
+        # NOTE: If no subsections, replaced with None
+        curr_subsections = curr_subsections if curr_subsections else None
+
+        # Store sections and subsections
+        section_to_subsections[curr_section] = curr_subsections
+    return section_to_subsections
+
+
+def parse_one_section_to_subsections(text):
+    """
+    Return a tuple of section and list of subsections.
+
+    Note
+    ----
+    Text must be 2+ text lines, where:
+        1) the first line is the section header, and
+        2) suceeding lines are subsection headers for the section headers
+
+    Parameters
+    ----------
+    text : str
+        First line is a section header, and line 2+ are possible subsection
+        headers
+
+    Returns
+    -------
+    tuple of (str, list)
+        First is the section header, and second is an ordered list of
+        subsections
+    """
+    # Split into lines
+    lines = [sent for sent in text.split("\n") if sent]
+
+    # Get section header (first line)
+    # NOTE: Default to whole line (if doesn't contain number)
+    section = parse_numbered_list_item_from_line(lines[0])
+    section = section if section else lines[0]
+
+    # Get subsections
+    subsections = []
+    for line in lines[1:]:
+        subsections.append(parse_unordered_list_item_from_line(line))
+
+    return section, subsections
 
 
 def parse_numbered_list_item_from_line(line):
@@ -235,3 +342,35 @@ def extract_list_from_numbered_list_text(text):
             items.append(item)
 
     return items
+
+
+def split_non_text_from_line(line):
+    """
+    Splits line into:
+        (1) left-side non-text (e.g., special characters), and
+        (2) right-side text segments.
+
+    Parameters
+    ----------
+    line : str
+        Text line
+
+    Returns
+    -------
+    tuple of (str, str)
+        Left-side non-text string (with whitespace appended) and
+        right-side text string
+    """
+    match = re.search("(\W*) (.*)", line)
+    # CASE 1: Of the form: "\n\n SomethingSomething"
+    if match.group(1):
+        return match.group(1) + " ", match.group(2)
+
+    # CASE 2: Of the form: " SomethingSomething"
+    match = re.search("(\s*)(.*)", line)
+    if match.group(1):
+        return match.group(1), match.group(2)
+
+    # CASE 3: Of the form: "SomethingSomething"
+    # NOTE: There is no left side
+    return "", line

@@ -1,2 +1,1 @@
-If you're done writing the section, say 'Done'.
-If not, can you finish it, starting from the last sentence?
+If you're done writing the section, say 'Done'. If not, can you finish it, starting from the last sentence: "{{ last_sentence }}"?
