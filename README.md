@@ -1,4 +1,4 @@
-# AI BookMaker
+# Alexandria AI BookMaker
 
 ## Quick Start
 1. Install required dependencies:
